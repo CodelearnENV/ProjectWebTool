@@ -8,29 +8,32 @@ on:
 jobs:
   delete-branch:
     runs-on: ubuntu-latest
-    steps:
-      - name: Extract issue key
-        run: echo "Received issue key: ${{ github.event.client_payload.issueKey }}"
 
-      - name: Fetch all branches and delete matching ones
+    steps:
+      - name: Set up environment
+        env:
+          ISSUE_KEY: ${{ github.event.client_payload.issueKey }}
+        run: |
+          echo "Received Jira issue key: $ISSUE_KEY"
+
+      - name: Get matching branches
         env:
           ISSUE_KEY: ${{ github.event.client_payload.issueKey }}
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          echo "Searching for branches with key: $ISSUE_KEY"
-          
-          # Get list of all branches
+          echo "Fetching branches containing: $ISSUE_KEY"
           BRANCHES=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            https://api.github.com/repos/${{ github.repository }}/branches \
-            | jq -r '.[].name' | grep "$ISSUE_KEY")
+            https://api.github.com/repos/$REPO/branches \
+            | jq -r '.[].name' | grep "$ISSUE_KEY" || true)
 
           if [ -z "$BRANCHES" ]; then
-            echo "No branches found containing: $ISSUE_KEY"
+            echo "✅ No matching branches found for $ISSUE_KEY"
             exit 0
           fi
 
           for BRANCH in $BRANCHES; do
-            echo "Deleting branch: $BRANCH"
+            echo "🗑️ Deleting branch: $BRANCH"
             curl -X DELETE -H "Authorization: token $GH_TOKEN" \
-              https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$BRANCH
+              https://api.github.com/repos/$REPO/git/refs/heads/$BRANCH
           done
