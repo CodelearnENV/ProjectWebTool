@@ -1,0 +1,24 @@
+# .github/workflows/delete-branch-on-done.yml
+name: Delete branch when Jira issue is Done
+
+on:
+  repository_dispatch:
+    types: [jira-issue-done]
+
+jobs:
+  delete-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete branch from issue key
+        run: |
+          ISSUE_KEY=${{ github.event.client_payload.issueKey }}
+          echo "Issue Key from Jira: $ISSUE_KEY"
+          
+          # Lấy danh sách nhánh có chứa issue key
+          BRANCHES=$(git ls-remote --heads origin | grep $ISSUE_KEY | awk '{print $2}' | sed 's|refs/heads/||')
+          
+          for BRANCH in $BRANCHES; do
+            echo "Deleting branch: $BRANCH"
+            curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$BRANCH
+          done
