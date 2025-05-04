@@ -1,5 +1,5 @@
 # .github/workflows/delete-branch-on-done.yml
-name: Delete branch when Jira issue is Done
+name: Delete Git branch when Jira issue is Done
 
 on:
   repository_dispatch:
@@ -9,16 +9,28 @@ jobs:
   delete-branch:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete branch from issue key
+      - name: Extract issue key
+        run: echo "Received issue key: ${{ github.event.client_payload.issueKey }}"
+
+      - name: Fetch all branches and delete matching ones
+        env:
+          ISSUE_KEY: ${{ github.event.client_payload.issueKey }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
-          ISSUE_KEY=${{ github.event.client_payload.issueKey }}
-          echo "Issue Key from Jira: $ISSUE_KEY"
+          echo "Searching for branches with key: $ISSUE_KEY"
           
-          # Lấy danh sách nhánh có chứa issue key
-          BRANCHES=$(git ls-remote --heads origin | grep $ISSUE_KEY | awk '{print $2}' | sed 's|refs/heads/||')
-          
+          # Get list of all branches
+          BRANCHES=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/branches \
+            | jq -r '.[].name' | grep "$ISSUE_KEY")
+
+          if [ -z "$BRANCHES" ]; then
+            echo "No branches found containing: $ISSUE_KEY"
+            exit 0
+          fi
+
           for BRANCH in $BRANCHES; do
             echo "Deleting branch: $BRANCH"
-            curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            curl -X DELETE -H "Authorization: token $GH_TOKEN" \
               https://api.github.com/repos/${{ github.repository }}/git/refs/heads/$BRANCH
           done
