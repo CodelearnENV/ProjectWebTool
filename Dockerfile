@@ -1,5 +1,5 @@
-# Sử dụng Tomcat chính thức làm base image
-FROM tomcat:10.1.27-jdk22-temurin
+# Sử dụng image chính thức của Tomcat với JDK 22
+FROM tomcat:10.1.24-jdk22-temurin
 
 # Cài đặt các biến môi trường nếu cần thiết
 ENV CATALINA_HOME /usr/local/tomcat
