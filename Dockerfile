@@ -2,7 +2,7 @@ FROM eclipse-temurin:22-jdk-jammy
 
 ENV CATALINA_HOME /usr/local/tomcat
 ENV PATH $CATALINA_HOME/bin:$PATH
-ENV TOMCAT_VERSION 10.1.24
+ENV TOMCAT_VERSION 10.1.28
 
 # Cài Tomcat
 RUN curl -fsSL https://downloads.apache.org/tomcat/tomcat-10/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | \
