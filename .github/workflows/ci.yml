@@ -11,31 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Extract issue key
-        id: extract
-        run: |
-          ISSUE_KEY=$(echo "${{ github.event.pull_request.title }}" | grep -oE '[A-Z]+-[0-9]+')
-          echo "ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV
-
-      - name: Authenticate with Jira
-        uses: atlassian/gajira-login@v3
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-
-      - name: Transition Jira issue to Done
-        uses: atlassian/gajira-transition@v3
-        with:
-          issue: ${{ env.ISSUE_KEY }}
-          transition: "Done"
-
       - name: Notify Slack of Jira issue completion
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
             {
-              "text": ":tada: Jira issue *${{ env.ISSUE_KEY }}* đã được chuyển sang *Done* và PR đã được merge!",
+              "text": ":tada: Jira issue *${{ env.ISSUE_KEY }}* đã được đã được merge!",
               "attachments": [
                 {
                   "color": "#36a64f",
