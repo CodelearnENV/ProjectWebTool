@@ -1,11 +1,12 @@
-# Sử dụng JDK 22 làm base image
-FROM openjdk:22-jdk-slim
+# Sử dụng JDK 17 làm base image
+FROM openjdk:17-jdk-slim
 
 # Cài đặt Tomcat 10.1.24
 ENV TOMCAT_VERSION 10.1.24
 ENV CATALINA_HOME /usr/local/tomcat
 
-RUN apt-get update && apt-get install -y curl && \
+# Kiểm tra URL và tải Tomcat
+RUN echo "https://downloads.apache.org/tomcat/tomcat-10/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz" && \
     curl -fsSL https://downloads.apache.org/tomcat/tomcat-10/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | \
     tar -xz -C /usr/local && \
     mv /usr/local/apache-tomcat-${TOMCAT_VERSION} $CATALINA_HOME && \
