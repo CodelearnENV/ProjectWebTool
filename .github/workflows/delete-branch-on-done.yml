@@ -1,39 +1,29 @@
-# .github/workflows/delete-branch-on-done.yml
-name: Delete Git branch when Jira issue is Done
+name: Auto Delete Branch After PR Closed
 
 on:
-  repository_dispatch:
-    types: [jira-issue-done]
+  pull_request:
+    types: [closed]
 
 jobs:
   delete-branch:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-
     steps:
-      - name: Set up environment
+      - name: Delete branch if not main/master
         env:
-          ISSUE_KEY: ${{ github.event.client_payload.issueKey }}
-        run: |
-          echo "Received Jira issue key: $ISSUE_KEY"
-
-      - name: Get matching branches
-        env:
-          ISSUE_KEY: ${{ github.event.client_payload.issueKey }}
           GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          REPO: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          REPO_NAME: ${{ github.repository }}
         run: |
-          echo "Fetching branches containing: $ISSUE_KEY"
-          BRANCHES=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            https://api.github.com/repos/$REPO/branches \
-            | jq -r '.[].name' | grep "$ISSUE_KEY" || true)
+          echo "Branch to delete: $BRANCH_NAME"
 
-          if [ -z "$BRANCHES" ]; then
-            echo "✅ No matching branches found for $ISSUE_KEY"
+          # Không xóa nếu là nhánh chính
+          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+            echo "⚠️ Not deleting branch $BRANCH_NAME (main/master)"
             exit 0
           fi
 
-          for BRANCH in $BRANCHES; do
-            echo "🗑️ Deleting branch: $BRANCH"
-            curl -X DELETE -H "Authorization: token $GH_TOKEN" \
-              https://api.github.com/repos/$REPO/git/refs/heads/$BRANCH
-          done
+          # Gọi GitHub API để xóa nhánh
+          curl -X DELETE \
+            -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/$REPO_NAME/git/refs/heads/$BRANCH_NAME
