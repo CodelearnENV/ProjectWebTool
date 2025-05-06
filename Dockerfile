@@ -1,24 +1,28 @@
-# Sử dụng JDK 17 làm base image
+# Base image sử dụng OpenJDK 17
 FROM openjdk:17-jdk-slim
 
-# Cài đặt Tomcat 10.1.24
-ENV TOMCAT_VERSION 10.1.24
-ENV CATALINA_HOME /usr/local/tomcat
+# Biến môi trường cho Tomcat
+ENV TOMCAT_VERSION=10.1.28
+ENV CATALINA_HOME=/usr/local/tomcat
+ENV PATH="$CATALINA_HOME/bin:$PATH"
 
-# Cài đặt curl để tải Tomcat
-RUN apt-get update && apt-get install -y curl
+# Cài curl và tạo thư mục tomcat
+RUN apt-get update && \
+    apt-get install -y curl && \
+    mkdir -p $CATALINA_HOME
 
-# Kiểm tra URL và tải Tomcat
-RUN curl -fsSL https://downloads.apache.org/tomcat/tomcat-10/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | \
-    tar -xz -C /usr/local && \
-    mv /usr/local/apache-tomcat-${TOMCAT_VERSION} $CATALINA_HOME && \
-    rm -rf $CATALINA_HOME/webapps/*
+# Tải Tomcat 10.1.28 từ Maven Repo và giải nén
+RUN curl -fsSL https://repo.maven.apache.org/maven2/org/apache/tomcat/tomcat/${TOMCAT_VERSION}/tomcat-${TOMCAT_VERSION}.tar.gz | \
+    tar -xz --strip-components=1 -C $CATALINA_HOME
 
-# Copy WAR file vào thư mục ứng dụng của Tomcat
+# Xoá các webapps mặc định
+RUN rm -rf $CATALINA_HOME/webapps/*
+
+# Copy WAR file vào Tomcat (giả định bạn đã build và có sẵn ở target/*.war)
 COPY target/*.war $CATALINA_HOME/webapps/ROOT.war
 
-# Mở port 8080 để ứng dụng có thể truy cập
+# Mở cổng HTTP
 EXPOSE 8080
 
-# Chạy Tomcat khi container bắt đầu
+# Lệnh khởi động Tomcat
 CMD ["catalina.sh", "run"]
