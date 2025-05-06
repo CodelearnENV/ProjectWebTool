@@ -1,12 +1,18 @@
-# Sử dụng image chính thức của Tomcat với JDK 22
-FROM tomcat:10.1.24-jdk22-temurin
+# Sử dụng JDK 22 làm base image
+FROM openjdk:22-jdk-slim
 
-# Cài đặt các biến môi trường nếu cần thiết
+# Cài đặt Tomcat 10.1.24
+ENV TOMCAT_VERSION 10.1.24
 ENV CATALINA_HOME /usr/local/tomcat
-ENV PATH $CATALINA_HOME/bin:$PATH
 
-# Copy WAR file từ thư mục target vào thư mục webapps của Tomcat
-COPY target/*.war /usr/local/tomcat/webapps/ROOT.war
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://downloads.apache.org/tomcat/tomcat-10/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | \
+    tar -xz -C /usr/local && \
+    mv /usr/local/apache-tomcat-${TOMCAT_VERSION} $CATALINA_HOME && \
+    rm -rf $CATALINA_HOME/webapps/*
+
+# Copy WAR file vào thư mục ứng dụng của Tomcat
+COPY target/*.war $CATALINA_HOME/webapps/ROOT.war
 
 # Mở port 8080 để ứng dụng có thể truy cập
 EXPOSE 8080
